@@ -19,7 +19,12 @@ const num = (e: Event) => {
 <template>
   <details class="card">
     <summary>
-      <span class="name">{{ exercise.name }}</span>
+      <span class="lead">
+        <span class="titles">
+          <span class="name">{{ exercise.name }}</span>
+          <ExerciseTags :exercise="exercise" />
+        </span>
+      </span>
       <span class="badge" :class="{ done: sets.length }">
         {{ sets.length ? `${sets.length} set${sets.length > 1 ? 's' : ''} logged` : 'Not started' }}
       </span>

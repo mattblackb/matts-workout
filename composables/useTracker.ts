@@ -1,10 +1,13 @@
 export type ExerciseType = 'weighted' | 'bodyweight' | 'cardio'
+export type BodyArea = 'upper' | 'lower' | 'core' | 'full'
+export const AREAS: BodyArea[] = ['upper', 'lower', 'core', 'full']
 
 export interface Exercise {
   id: string
   name: string
   type: ExerciseType
   notes: string
+  area?: BodyArea
 }
 
 export interface SetEntry {
@@ -105,6 +108,17 @@ export const fromDateKey = (k: string) => {
   return new Date(y, m - 1, d)
 }
 
+export const areaLabel = (a: BodyArea) => ({ upper: 'Upper body', lower: 'Lower body', core: 'Core', full: 'Full body' })[a]
+
+const DEFAULT_AREAS: Record<string, BodyArea> = Object.fromEntries([
+  ...['Bench Press', 'Incline Bench Press', 'Decline Bench Press', 'Dumbbell Bench Press', 'Incline Dumbbell Press', 'Dumbbell Fly', 'Cable Fly', 'Push-ups (Weighted)', 'Overhead Press', 'Dumbbell Shoulder Press', 'Arnold Press', 'Lateral Raise', 'Front Raise', 'Rear Delt Fly', 'Face Pull', 'Upright Row', 'Shrugs', 'Barbell Row', 'Dumbbell Row', 'Seated Cable Row', 'T-Bar Row', 'Lat Pulldown', 'Straight-Arm Pulldown', 'Barbell Curl', 'Dumbbell Curl', 'Hammer Curl', 'Preacher Curl', 'Tricep Pushdown', 'Skull Crusher', 'Overhead Tricep Extension', 'Close-Grip Bench Press', 'Pull-ups', 'Chin-ups', 'Dips', 'Push-ups', 'Inverted Row', 'Muscle-ups'].map(n => [n, 'upper']),
+  ...['Squat', 'Front Squat', 'Goblet Squat', 'Bulgarian Split Squat', 'Leg Press', 'Lunges', 'Leg Extension', 'Leg Curl', 'Romanian Deadlift', 'Deadlift', 'Sumo Deadlift', 'Hip Thrust', 'Calf Raise'].map(n => [n, 'lower']),
+  ...['Cable Crunch', 'Hanging Leg Raise (Weighted)', 'Hanging Leg Raise', 'Plank'].map(n => [n, 'core']),
+  ...["Farmer's Walk", 'Treadmill', 'Stationary Bike', 'Rowing Machine', 'Cross Trainer', 'Stair Climber'].map(n => [n, 'full'])
+].map(([n, a]) => [n.toLowerCase(), a]))
+
+export const areaOf = (e: Exercise): BodyArea => e.area ?? DEFAULT_AREAS[e.name.toLowerCase()] ?? 'full'
+
 export const typeLabel = (t: ExerciseType) => ({ weighted: 'Weighted', bodyweight: 'Bodyweight', cardio: 'Cardio' })[t]
 
 export const emptySet = (): SetEntry => ({ reps: null, weight: null, assisted: false, assist: null, minutes: null, level: null })
@@ -187,9 +201,9 @@ export function useTracker() {
     if (!Object.keys(log).length) delete state.value.logs[date]
   }
 
-  function addExercise(name: string, type: ExerciseType) {
+  function addExercise(name: string, type: ExerciseType, area: BodyArea = 'full') {
     const id = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString(36)}`
-    state.value.exercises.push({ id, name: name.trim(), type, notes: '' })
+    state.value.exercises.push({ id, name: name.trim(), type, notes: '', area })
   }
 
   function deleteExercise(id: string) {
@@ -224,7 +238,7 @@ export function useTracker() {
     state.value = {
       unit: d.unit === 'lb' ? 'lb' : 'kg',
       seed: 3,
-      exercises: d.exercises.map((e: any) => ({ id: e.id, name: e.name, type: e.type, notes: typeof e.notes === 'string' ? e.notes : '' })),
+      exercises: d.exercises.map((e: any) => ({ id: e.id, name: e.name, type: e.type, notes: typeof e.notes === 'string' ? e.notes : '', ...(AREAS.includes(e.area) ? { area: e.area } : {}) })),
       routine,
       logs: d.logs
     }

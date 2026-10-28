@@ -19,13 +19,16 @@ const move = (d: number, i: number, n: number) => {
     <p class="muted">Choose the exercises that appear on each day.</p>
     <details v-for="(name, d) in days" :key="d" class="card" :open="new Date().getDay() === d">
       <summary>
-        <span class="name">{{ name }}</span>
+        <span class="lead"><DayIcon :day="d" /><span class="name">{{ name }}</span></span>
         <span class="badge">{{ (state.routine[d] || []).length }} exercises</span>
       </summary>
       <div class="body">
         <ol class="plain">
           <li v-for="(id, i) in state.routine[d] || []" :key="id + i" class="row">
-            <span class="grow">{{ byId(id)?.name }}</span>
+            <span class="grow titles">
+              <span>{{ byId(id)?.name }}</span>
+              <ExerciseTags v-if="byId(id)" :exercise="byId(id)!" />
+            </span>
             <button type="button" class="btn icon" :aria-label="`Move ${byId(id)?.name} up`" :disabled="i === 0" @click="move(d, i, -1)">↑</button>
             <button type="button" class="btn icon" :aria-label="`Move ${byId(id)?.name} down`" :disabled="i === state.routine[d].length - 1" @click="move(d, i, 1)">↓</button>
             <button type="button" class="btn icon" :aria-label="`Remove ${byId(id)?.name} from ${name}`" @click="remove(d, i)">✕</button>

@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import type { ExerciseType } from '~/composables/useTracker'
+import type { BodyArea, ExerciseType } from '~/composables/useTracker'
 const { exportJson, importJson, state, sorted, addExercise, deleteExercise } = useTracker()
 const name = ref('')
 const type = ref<ExerciseType>('weighted')
+const area = ref<BodyArea>('upper')
 
 function submit() {
   if (!name.value.trim()) return
-  addExercise(name.value, type.value)
+  addExercise(name.value, type.value, area.value)
   name.value = ''
 }
 function remove(id: string, n: string) {
@@ -59,13 +60,28 @@ async function restore(e: Event) {
           <option value="cardio">Cardio (time / level)</option>
         </select>
       </label>
+      <label class="field">
+        <span>Body area</span>
+        <select v-model="area">
+          <option v-for="a in AREAS" :key="a" :value="a">{{ areaLabel(a) }}</option>
+        </select>
+      </label>
       <button class="btn">Add exercise</button>
     </form>
 
     <h2>All exercises ({{ sorted.length }})</h2>
     <ul class="plain list">
       <li v-for="e in sorted" :key="e.id" class="row">
-        <span class="grow">{{ e.name }} <span class="badge">{{ typeLabel(e.type) }}</span></span>
+        <span class="grow titles">
+          <span>{{ e.name }}</span>
+          <ExerciseTags :exercise="e" />
+        </span>
+        <label class="area-pick">
+          <span class="sr">Body area for {{ e.name }}</span>
+          <select :value="areaOf(e)" @change="e.area = ($event.target as HTMLSelectElement).value as BodyArea">
+            <option v-for="a in AREAS" :key="a" :value="a">{{ areaLabel(a) }}</option>
+          </select>
+        </label>
         <button type="button" class="btn secondary" :aria-label="`Delete ${e.name}`" @click="remove(e.id, e.name)">Delete</button>
       </li>
     </ul>

@@ -10,12 +10,15 @@ const days = computed(() => Object.keys(state.value.logs).sort().reverse())
     <p v-if="!days.length" class="muted">No workouts logged yet.</p>
     <details v-for="d in days" :key="d" class="card">
       <summary>
-        <span class="name">{{ fromDateKey(d).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) }}</span>
+        <span class="lead"><DayIcon :day="fromDateKey(d).getDay()" /><span class="name">{{ fromDateKey(d).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) }}</span></span>
         <span class="badge">{{ Object.keys(state.logs[d]).length }} exercises</span>
       </summary>
       <div class="body">
         <section v-for="(sets, id) in state.logs[d]" :key="id">
-          <h3>{{ byId(String(id))?.name ?? 'Deleted exercise' }}</h3>
+          <h3 class="with-icons">
+            {{ byId(String(id))?.name ?? 'Deleted exercise' }}
+            <ExerciseTags v-if="byId(String(id))" :exercise="byId(String(id))!" />
+          </h3>
           <ul>
             <li v-for="(s, i) in sets" :key="i">{{ formatSet(s, byId(String(id))?.type ?? 'weighted') }}</li>
           </ul>

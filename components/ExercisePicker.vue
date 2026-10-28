@@ -25,8 +25,10 @@ function pick(id: string) {
     <ul :id="`${uid}-list`" class="plain results">
       <li v-for="e in results" :key="e.id">
         <button type="button" class="opt" @click="pick(e.id)">
-          <span>{{ e.name }}</span>
-          <span class="badge">{{ typeLabel(e.type) }}</span>
+          <span class="titles">
+            <span>{{ e.name }}</span>
+            <ExerciseTags :exercise="e" />
+          </span>
         </button>
       </li>
       <li v-if="!results.length" class="muted pad">No matches. Add it in <NuxtLink to="/settings">Settings</NuxtLink>.</li>

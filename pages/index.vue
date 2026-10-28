@@ -31,7 +31,7 @@ const pretty = computed(() => fromDateKey(date.value).toLocaleDateString(undefin
       </label>
       <button type="button" class="btn icon" aria-label="Next day" @click="shift(1)">›</button>
     </div>
-    <h2 aria-live="polite">{{ pretty }}</h2>
+    <h2 class="dayhead" aria-live="polite"><DayIcon :day="fromDateKey(date).getDay()" />{{ pretty }}</h2>
 
     <p v-if="!list.length" class="muted">
       Nothing planned for this day. Set up a <NuxtLink to="/routine">routine</NuxtLink> or add an exercise below.
