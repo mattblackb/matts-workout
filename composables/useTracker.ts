@@ -24,7 +24,7 @@ export interface TrackerState {
   logs: Record<string, Record<string, SetEntry[]>> // date -> exercise id -> sets
 }
 
-const KEY = 'workout-tracker-v1'
+export const STORAGE_KEY = 'workout-tracker-v1'
 
 const defaults = (): TrackerState => ({
   unit: 'kg',
@@ -114,7 +114,7 @@ export function useTracker() {
     const base = defaults()
     if (import.meta.client) {
       try {
-        const raw = localStorage.getItem(KEY)
+        const raw = localStorage.getItem(STORAGE_KEY)
         if (raw) {
           const saved = JSON.parse(raw)
           const merged = { ...base, ...saved }
@@ -133,17 +133,6 @@ export function useTracker() {
   })
 
   const saveError = useState<boolean>('tracker-save-error', () => false)
-  const started = useState<boolean>('tracker-watch', () => false)
-  if (import.meta.client && !started.value) {
-    started.value = true
-    watch(state, (v) => {
-      try {
-        localStorage.setItem(KEY, JSON.stringify(v))
-        saveError.value = false
-      } catch { saveError.value = true }
-    }, { deep: true })
-  }
-
   const sorted = computed(() => [...state.value.exercises].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })))
 
   const byId = (id: string) => state.value.exercises.find(e => e.id === id)
@@ -210,5 +199,37 @@ export function useTracker() {
     }
   }
 
-  return { sorted, state, saveError, byId, routineFor, lastSession, formatSet, setsFor, addSet, copyLast, removeSet, addExercise, deleteExercise }
+  function exportJson() {
+    return JSON.stringify({ app: 'workout-tracker', exportedAt: new Date().toISOString(), data: state.value }, null, 2)
+  }
+
+  // Returns an error message, or null on success
+  function importJson(text: string): string | null {
+    let parsed: any
+    try { parsed = JSON.parse(text) } catch { return 'That file is not valid JSON.' }
+    const d = parsed?.app === 'workout-tracker' ? parsed.data : parsed
+    const isObj = (v: unknown) => !!v && typeof v === 'object' && !Array.isArray(v)
+    const types = ['weighted', 'bodyweight', 'cardio']
+    if (!d || !Array.isArray(d.exercises) || !isObj(d.routine) || !isObj(d.logs)) {
+      return 'This does not look like a Workout Tracker backup.'
+    }
+    if (!d.exercises.every((e: any) => e && typeof e.id === 'string' && typeof e.name === 'string' && types.includes(e.type))) {
+      return 'The backup contains invalid exercises.'
+    }
+    const routine: Record<string, string[]> = {}
+    for (let i = 0; i < 7; i++) {
+      const r = d.routine[String(i)]
+      routine[String(i)] = Array.isArray(r) ? r.filter((x: unknown) => typeof x === 'string') : []
+    }
+    state.value = {
+      unit: d.unit === 'lb' ? 'lb' : 'kg',
+      seed: 3,
+      exercises: d.exercises.map((e: any) => ({ id: e.id, name: e.name, type: e.type, notes: typeof e.notes === 'string' ? e.notes : '' })),
+      routine,
+      logs: d.logs
+    }
+    return null
+  }
+
+  return { exportJson, importJson, sorted, state, saveError, byId, routineFor, lastSession, formatSet, setsFor, addSet, copyLast, removeSet, addExercise, deleteExercise }
 }
