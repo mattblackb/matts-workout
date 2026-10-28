@@ -13,6 +13,8 @@ function remove(id: string, n: string) {
   if (confirm(`Delete "${n}"? It will be removed from your routine (logged history is kept).`)) deleteExercise(id)
 }
 
+const sync = useSync()
+const passphrase = ref('')
 const message = ref('')
 const failed = ref(false)
 const fileInput = ref<HTMLInputElement>()
@@ -85,5 +87,30 @@ async function restore(e: Event) {
       <input ref="fileInput" type="file" accept="application/json,.json" class="sr" tabindex="-1" aria-label="Backup file" @change="restore" />
     </div>
     <p role="status" :class="failed ? 'alert' : 'muted'">{{ message }}</p>
+
+    <h2>Sync across devices</h2>
+    <p class="muted">Keeps your data in sync between browsers and devices using the passphrase set on your Netlify site. The app still works offline and syncs when you're back online.</p>
+    <template v-if="sync.status.value === 'off'">
+      <form class="add" @submit.prevent="sync.connect(passphrase)">
+        <label class="field">
+          <span>Sync passphrase</span>
+          <input v-model="passphrase" type="password" autocomplete="current-password" required />
+        </label>
+        <button class="btn">Connect</button>
+      </form>
+    </template>
+    <template v-else>
+      <p>
+        <span class="badge" :class="{ done: sync.status.value === 'idle' }">
+          {{ sync.status.value === 'syncing' ? 'Syncing…' : sync.status.value === 'error' ? 'Sync problem' : 'Sync on' }}
+        </span>
+        <span v-if="sync.lastSynced.value" class="muted"> Last synced {{ new Date(sync.lastSynced.value).toLocaleTimeString() }}</span>
+      </p>
+      <div class="add">
+        <button type="button" class="btn" :disabled="sync.status.value === 'syncing'" @click="sync.syncNow()">Sync now</button>
+        <button type="button" class="btn secondary" @click="sync.disconnect()">Disconnect this device</button>
+      </div>
+    </template>
+    <p role="status" :class="sync.status.value === 'error' ? 'alert' : 'muted'">{{ sync.message.value }}</p>
   </section>
 </template>
